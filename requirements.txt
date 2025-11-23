@@ -1,2 +1,6 @@
 ipykernel
 python-dotenv
+requests
+beautifulsoup4
+sqlalchemy
+psycopg2-binary
