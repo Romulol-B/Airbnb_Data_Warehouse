@@ -12,7 +12,7 @@ import io
 
 def get_html(force_download=False):
 
-    html_save_path = os.path.abspath('../..') + '/data/airbnb-scrap/index.html'
+    html_save_path = os.path.abspath('../') + '/data/airbnb-scrap/index.html'
     if os.path.exists(html_save_path) and not force_download:
         with open(html_save_path,'r') as f:
             return f.read()
@@ -92,7 +92,7 @@ def download_data(data_links,save_folder_path = '../data/airbnb-scrap/'):
 
 
 # %%
-root_path = os.path.abspath('../..')
+root_path = os.path.abspath('../')
 
 save_folder_path = root_path + '/data/airbnb-scrap/'
 if not os.path.exists(save_folder_path):
