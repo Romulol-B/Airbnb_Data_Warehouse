@@ -63,18 +63,25 @@ def generate_users_data(df,save = True):
     df['sexo'] = df.apply(lambda x: random.choice(genders), axis=1)
     df['pais_origem'] = df.apply(lambda x: random.choice(countries), axis=1)
 
+    df = df.drop(columns=['reviewer_name'])
+
     if save:
-        df.to_csv(relative_path + 'data/airbnb-scrap/usuarios.csv')
+        df.to_csv(relative_path + 'data/airbnb-scrap/usuarios.csv',index = False)
     
     return df
 
 def create_dimensions_tables(df_listings,df_reviews,df_locations,df_datas,engine):
     df_imovel = df_listings[['id','sk_imovel','property_type','room_type','beds','bathrooms','bedrooms']]
+    df_imovel = df_imovel.rename(columns={'property_type': 'tipo_propriedade','room_type': 'tipo_quarto','beds': 'nro_camas',
+                                          'bathrooms': 'nro_banheiros','bedrooms': 'nro_quartos'})
 
     df_anfitriao = df_listings [['host_id','host_name','host_since','host_location','host_is_superhost','host_response_rate','host_acceptance_rate']]
     df_anfitriao = df_anfitriao.drop_duplicates()
     df_anfitriao = df_anfitriao.reset_index(drop=True)
     df_anfitriao['sk_anfitriao'] = df_anfitriao.index + 1
+
+    df_anfitriao = df_anfitriao.rename(columns = {'host_name': 'nome','host_since': 'host_desde','host_location': 'localizacao','host_is_superhost': 'superhost',
+                                                  'host_response_rate': 'taxa_de_resposta','host_acceptance_rate': 'taxa_de_aceitacao'})
 
     df_reviews_uniq = df_reviews[['reviewer_id','reviewer_name']]
     df_reviews_uniq = df_reviews_uniq.drop_duplicates()
@@ -128,11 +135,14 @@ def create_fact_tables(df_listings,df_reviews,df_locations,df_datas,engine):
     df_anfitriao = df_anfitriao.reset_index(drop=True)
     df_anfitriao['sk_anfitriao'] = df_anfitriao.index + 1
 
+
     df_listings = df_listings.rename(columns={'id':'id_imovel'})
 
     df_imovel_anfitriao = df_listings.merge(df_anfitriao,on='host_id')
 
-    df_fato_avaliacao = df_imovel_anfitriao[['sk_imovel','sk_anfitriao'] + scores_columns]
+    df_imovel_localizacao = df_imovel_anfitriao.merge(df_locations,on='id_imovel')
+
+    df_fato_avaliacao = df_imovel_localizacao[['sk_imovel','sk_anfitriao','sk_localizacao'] + scores_columns]
 
     # --------------FATO RESERVAS ----------------
 
@@ -148,8 +158,6 @@ def create_fact_tables(df_listings,df_reviews,df_locations,df_datas,engine):
     df_usuarios['sk_locador'] = df_usuarios.index + 1
 
     df_reviews = df_reviews.rename(columns={'listing_id':'id_imovel'})
-
-    df_imovel_localizacao = df_imovel_anfitriao.merge(df_locations,on='id_imovel')
 
 
     df_review_imovel = df_reviews.merge(df_imovel_localizacao,on='id_imovel')
