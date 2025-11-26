@@ -20,18 +20,25 @@ def exec_query(query):
     return df
         
     
-if len(sys.argv) <= 1:
+if len(sys.argv) <= 2:
     print('Query não encontrada')
     exit(0)
 
 if not os.path.exists('../data/consultas'): os.mkdir('../data/consultas')
 
-for filename in sys.argv[1:]:
+if sys.argv[1] == 'True':
+    save = True
+else: save = False 
+
+for filename in sys.argv[2:]:
     print("executando query", filename)
 
     with open(f'consultas/{filename}') as f:
         query = f.read()
         df = exec_query(query)
-        df.to_csv(f'../data/consultas/{filename[:-4]}_resultado.csv',index=False)
+        if save:
+            df.to_csv(f'../data/consultas/{filename[:-4]}_resultado.csv',index=False)
+        else:
+            print(df)
 
 
