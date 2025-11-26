@@ -3,14 +3,16 @@
 from bs4 import BeautifulSoup
 import requests
 import os
-
+import gzip
+import shutil
+import io
 
 
 # %%
 
 def get_html(force_download=False):
 
-    html_save_path = os.path.abspath('..') + '/data/airbnb-scrap/index.html'
+    html_save_path = os.path.abspath('../') + '/data/airbnb-scrap/index.html'
     if os.path.exists(html_save_path) and not force_download:
         with open(html_save_path,'r') as f:
             return f.read()
@@ -63,18 +65,24 @@ def get_links_by_city(html_doc,cities = []):
 
     return data_links
 
-def download_data(data_links,save_folder = '../data/airbnb-scrap/'):
+def download_data(data_links,save_folder_path = '../data/airbnb-scrap/'):
     for cname,(date,links) in data_links.items():
         date = date.replace(' ','').replace(',','')
 
         for x in ['listings','reviews']:
-            filename = save_folder + f'{cname}-{x}-{date}.csv'
+            if not os.path.exists(save_folder_path + x): os.mkdir(save_folder_path + x)
+            filename = save_folder_path + f'{x}/{cname}-{x}-{date}.csv'
+
             if not os.path.exists(filename):
                 try:
                     response = requests.get(links[x])
+                        
                     if response.status_code == 200:
-                        with open(filename, 'wb') as f:
-                            f.write(response.content)
+                        with gzip.GzipFile(fileobj=io.BytesIO(response.content)) as f:
+
+                            content = f.read().decode('utf-8')
+                            with open(filename, 'w',newline='',encoding='utf-8') as f_csv:
+                                f_csv.write(content)
                     else:
                         print(f"Falha ao baixar o arquivo {cname}: {response.status_code}")
                         
@@ -84,7 +92,7 @@ def download_data(data_links,save_folder = '../data/airbnb-scrap/'):
 
 
 # %%
-root_path = os.path.abspath('..')
+root_path = os.path.abspath('../')
 
 save_folder_path = root_path + '/data/airbnb-scrap/'
 if not os.path.exists(save_folder_path):
@@ -94,9 +102,10 @@ if not os.path.exists(save_folder_path):
 html_doc = get_html()
 
 
-links = get_links_by_city(html_doc,cities=['Rio de Janeiro','Albany'])
+links = get_links_by_city(html_doc,cities=['Rio de Janeiro'])
 
-for k,v in links.items():
-    print(k,v)
+download_data(links,save_folder_path=save_folder_path)
 
-download_data(links,save_folder=save_folder_path)
+# %%
+print(links)
+# %%
